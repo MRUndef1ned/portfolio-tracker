@@ -1,0 +1,151 @@
+import { Router } from "express";
+import { z } from "zod";
+import { successResponse } from "@portfolio-tracker/shared/api-types";
+import type { AppServices } from "../services/app-services";
+import { paginationSchema, validateBody, validateQuery } from "../middleware/validate";
+import { checkDatabaseHealth } from "../database/health";
+import type Database from "better-sqlite3";
+
+const assetSchema = z.object({
+  ticker: z.string().min(1),
+  displayName: z.string().min(1),
+  market: z.string().min(1),
+  assetType: z.string().min(1),
+  currency: z.string().min(3).max(3),
+  provider: z.string().nullable().optional(),
+  isin: z.string().nullable().optional(),
+  status: z.string().default("active")
+});
+
+const transactionSchema = z.object({
+  assetId: z.number().int().positive(),
+  transactionType: z.string().min(1),
+  quantity: z.number().positive(),
+  unitPrice: z.number().nonnegative(),
+  commission: z.number().nonnegative().default(0),
+  tax: z.number().nonnegative().default(0),
+  currency: z.string().min(3).max(3),
+  exchangeRate: z.number().positive().default(1),
+  tradeDate: z.string().min(1),
+  settlementDate: z.string().nullable().optional(),
+  broker: z.string().nullable().optional(),
+  account: z.string().nullable().optional(),
+  notes: z.string().nullable().optional()
+});
+
+export function createApiRouter(services: AppServices, db: Database.Database): Router {
+  const router = Router();
+
+  router.get("/health", (_req, res) => {
+    const dbHealth = checkDatabaseHealth(db);
+    res.json(
+      successResponse({
+        application: "ok",
+        database: dbHealth.ok ? "ok" : "error",
+        version: "0.1.0"
+      })
+    );
+  });
+
+  router.get("/assets", validateQuery(paginationSchema), (req, res) => {
+    const { page, pageSize } = paginationSchema.parse(req.query);
+    const result = services.listAssets(page, pageSize);
+    res.json(
+      successResponse(result.items, {
+        total: result.total,
+        page: result.page,
+        pageSize: result.pageSize,
+        totalPages: result.totalPages
+      })
+    );
+  });
+
+  router.get("/assets/search", (req, res) => {
+    const q = String(req.query.q ?? "");
+    res.json(successResponse(services.assets.search(q)));
+  });
+
+  router.get("/assets/:id", (req, res) => {
+    res.json(successResponse(services.getAsset(Number(req.params.id))));
+  });
+
+  router.post("/assets", validateBody(assetSchema), (req, res) => {
+    res.status(201).json(successResponse(services.createAsset(req.body)));
+  });
+
+  router.put("/assets/:id", validateBody(assetSchema.partial()), (req, res) => {
+    res.json(successResponse(services.updateAsset(Number(req.params.id), req.body)));
+  });
+
+  router.delete("/assets/:id", (req, res) => {
+    services.deleteAsset(Number(req.params.id));
+    res.json(successResponse({ deleted: true }));
+  });
+
+  router.get("/transactions", validateQuery(paginationSchema), (req, res) => {
+    const { page, pageSize } = paginationSchema.parse(req.query);
+    const result = services.listTransactions(page, pageSize);
+    res.json(
+      successResponse(result.items, {
+        total: result.total,
+        page: result.page,
+        pageSize: result.pageSize,
+        totalPages: result.totalPages
+      })
+    );
+  });
+
+  router.get("/transactions/:id", (req, res) => {
+    res.json(successResponse(services.getTransaction(Number(req.params.id))));
+  });
+
+  router.post("/transactions", validateBody(transactionSchema), (req, res) => {
+    res.status(201).json(successResponse(services.createTransaction(req.body)));
+  });
+
+  router.put("/transactions/:id", validateBody(transactionSchema.partial()), (req, res) => {
+    res.json(successResponse(services.updateTransaction(Number(req.params.id), req.body)));
+  });
+
+  router.delete("/transactions/:id", (req, res) => {
+    services.deleteTransaction(Number(req.params.id));
+    res.json(successResponse({ deleted: true }));
+  });
+
+  router.get("/portfolio", async (_req, res, next) => {
+    try {
+      res.json(successResponse(await services.getPortfolioSummary()));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/portfolio/positions", async (_req, res, next) => {
+    try {
+      const summary = await services.getPortfolioSummary();
+      res.json(successResponse(summary.positions));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/settings", (_req, res) => {
+    res.json(successResponse(services.getSettings()));
+  });
+
+  router.put("/settings", (req, res) => {
+    res.json(successResponse(services.updateSettings(req.body ?? {})));
+  });
+
+  router.get("/search", (req, res) => {
+    const q = String(req.query.q ?? "");
+    res.json(
+      successResponse({
+        assets: services.assets.search(q),
+        transactions: []
+      })
+    );
+  });
+
+  return router;
+}

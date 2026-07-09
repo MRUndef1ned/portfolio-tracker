@@ -1,0 +1,49 @@
+name: portfolio-tracker
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    container_name: portfolio-tracker-web
+    env_file:
+      - .env
+      - apps/web/.env.example
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      - ./apps/web:/workspace/apps/web
+    healthcheck:
+      test: ["CMD-SHELL", "echo ok"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    container_name: portfolio-tracker-api
+    working_dir: /workspace
+    env_file:
+      - .env
+      - apps/api/.env.example
+    ports:
+      - "${API_PORT:-3000}:3000"
+    volumes:
+      - .:/workspace
+      - api_node_modules:/workspace/node_modules
+      - sqlite_data:/workspace/data
+    healthcheck:
+      test: ["CMD-SHELL", "echo ok"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:
+  api_node_modules:
