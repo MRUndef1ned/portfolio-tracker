@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node ../../scripts/check-node.mjs && tsx src/index.ts",
     "migrate": "node ../../scripts/check-node.mjs && tsx src/database/migrations/cli.ts",
+    "benchmark:portfolio": "node ../../scripts/check-node.mjs && tsx src/scripts/benchmark-portfolio.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -13,7 +14,9 @@
     "@portfolio-tracker/shared": "workspace:*",
     "better-sqlite3": "^11.2.1",
     "cors": "^2.8.5",
+    "express-rate-limit": "^7.4.1",
     "express": "^4.19.2",
+    "helmet": "^7.1.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

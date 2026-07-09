@@ -4,6 +4,8 @@ build
 coverage
 data
 *.db
+test-results
+playwright-report
 .env
 .env.*
 *.log

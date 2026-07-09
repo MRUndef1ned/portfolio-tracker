@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 import type { AppConfig } from "@portfolio-tracker/config/env";
 import type { Logger } from "@portfolio-tracker/shared/logger";
 import { errorResponse } from "@portfolio-tracker/shared/api-types";
@@ -17,7 +19,17 @@ export function createApp(
 ) {
   const app = express();
 
+  app.disable("x-powered-by");
+  app.use(helmet());
   app.use(cors({ origin: true }));
+  app.use(
+    rateLimit({
+      windowMs: 60_000,
+      max: 300,
+      standardHeaders: true,
+      legacyHeaders: false
+    })
+  );
   app.use(express.json({ limit: "2mb" }));
   app.use(requestContext(logger));
 
