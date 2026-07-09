@@ -33,6 +33,10 @@ const transactionSchema = z.object({
   notes: z.string().nullable().optional()
 });
 
+const settingsSchema = z.record(z.string());
+const importSchema = z.object({ csv: z.string().min(1) });
+const restoreSchema = z.object({ fileName: z.string().min(1) });
+
 export function createApiRouter(services: AppServices, db: Database.Database): Router {
   const router = Router();
 
@@ -42,6 +46,8 @@ export function createApiRouter(services: AppServices, db: Database.Database): R
       successResponse({
         application: "ok",
         database: dbHealth.ok ? "ok" : "error",
+        diskFreeMb: dbHealth.diskFreeMb,
+        integrity: dbHealth.integrity,
         version: "0.1.0"
       })
     );
@@ -50,19 +56,16 @@ export function createApiRouter(services: AppServices, db: Database.Database): R
   router.get("/assets", validateQuery(paginationSchema), (req, res) => {
     const { page, pageSize } = paginationSchema.parse(req.query);
     const result = services.listAssets(page, pageSize);
-    res.json(
-      successResponse(result.items, {
-        total: result.total,
-        page: result.page,
-        pageSize: result.pageSize,
-        totalPages: result.totalPages
-      })
-    );
+    res.json(successResponse(result.items, {
+      total: result.total,
+      page: result.page,
+      pageSize: result.pageSize,
+      totalPages: result.totalPages
+    }));
   });
 
   router.get("/assets/search", (req, res) => {
-    const q = String(req.query.q ?? "");
-    res.json(successResponse(services.assets.search(q)));
+    res.json(successResponse(services.searchAssets(String(req.query.q ?? ""))));
   });
 
   router.get("/assets/:id", (req, res) => {
@@ -85,14 +88,21 @@ export function createApiRouter(services: AppServices, db: Database.Database): R
   router.get("/transactions", validateQuery(paginationSchema), (req, res) => {
     const { page, pageSize } = paginationSchema.parse(req.query);
     const result = services.listTransactions(page, pageSize);
-    res.json(
-      successResponse(result.items, {
-        total: result.total,
-        page: result.page,
-        pageSize: result.pageSize,
-        totalPages: result.totalPages
-      })
-    );
+    res.json(successResponse(result.items, {
+      total: result.total,
+      page: result.page,
+      pageSize: result.pageSize,
+      totalPages: result.totalPages
+    }));
+  });
+
+  router.get("/transactions/export", (_req, res) => {
+    res.setHeader("content-type", "text/csv; charset=utf-8");
+    res.send(services.exportTransactionsCsv());
+  });
+
+  router.post("/transactions/import", validateBody(importSchema), (req, res) => {
+    res.status(201).json(successResponse(services.importTransactionsCsv(req.body.csv)));
   });
 
   router.get("/transactions/:id", (req, res) => {
@@ -129,22 +139,68 @@ export function createApiRouter(services: AppServices, db: Database.Database): R
     }
   });
 
+  router.get("/reports/portfolio", async (_req, res, next) => {
+    try {
+      res.json(successResponse(await services.getPortfolioReport()));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/reports/performance", async (_req, res, next) => {
+    try {
+      const report = await services.getPortfolioReport();
+      res.json(successResponse({
+        totalProfit: report.summary.totalProfit,
+        totalReturnPct: report.summary.totalReturnPct,
+        positions: report.summary.positions
+      }));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/reports/export/csv", (_req, res) => {
+    res.setHeader("content-type", "text/csv; charset=utf-8");
+    res.send(services.exportTransactionsCsv());
+  });
+
+  router.get("/reports/export/json", async (_req, res, next) => {
+    try {
+      res.json(successResponse(await services.getPortfolioReport()));
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.get("/settings", (_req, res) => {
     res.json(successResponse(services.getSettings()));
   });
 
-  router.put("/settings", (req, res) => {
-    res.json(successResponse(services.updateSettings(req.body ?? {})));
+  router.put("/settings", validateBody(settingsSchema), (req, res) => {
+    res.json(successResponse(services.updateSettings(req.body)));
+  });
+
+  router.post("/backup", (_req, res) => {
+    res.status(201).json(successResponse(services.createBackup()));
+  });
+
+  router.get("/backup/list", (_req, res) => {
+    res.json(successResponse(services.listBackups()));
+  });
+
+  router.post("/backup/restore", validateBody(restoreSchema), (req, res) => {
+    res.json(successResponse(services.restoreBackup(req.body.fileName)));
   });
 
   router.get("/search", (req, res) => {
     const q = String(req.query.q ?? "");
-    res.json(
-      successResponse({
-        assets: services.assets.search(q),
-        transactions: []
-      })
-    );
+    res.json(successResponse({
+      assets: services.searchAssets(q),
+      transactions: services.listTransactions(1, 100).items.filter((tx) =>
+        tx.transactionType.toLowerCase().includes(q.toLowerCase())
+      )
+    }));
   });
 
   return router;

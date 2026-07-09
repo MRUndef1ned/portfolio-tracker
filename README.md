@@ -21,31 +21,26 @@ pnpm dev:web
 - API: http://localhost:3000/api/v1/health
 - Web: http://localhost:5173
 
-## Implemented (V1 skeleton)
+## Implemented
 
-- SQLite schema + migrations
+- SQLite schema + migrations + repository layer
 - Express REST API (`/api/v1`)
 - Asset / Transaction / Portfolio / Settings endpoints
-- Portfolio engine (weighted average, realized/unrealized P/L)
+- Reporting, CSV import/export, backup/restore endpoints
+- Portfolio engine (weighted average, realized/unrealized P/L, deterministic ordering)
 - Mock market data provider (no API keys required)
-- React + MUI dashboard (Dashboard, Portfolio, Transactions, Assets, Settings)
+- React + MUI dashboard (Dashboard, Portfolio, Transactions, Assets, Reports, Import, Export, Backup, Settings)
+- Vitest domain tests
 
 ## Scripts
 
-- `pnpm dev:api` â€” API server
-- `pnpm dev:web` â€” Web UI
-- `pnpm test` â€” Vitest (portfolio engine)
+- `pnpm dev:api` — API server
+- `pnpm dev:web` — Web UI
+- `pnpm test` — Vitest
 - `pnpm lint` / `pnpm typecheck`
-
-## Spec Documents
-
-Place in `docs/`:
-
-- `MASTER_SPEC.md`
-- `IMPLEMENTATION_PLAN.md`
-- `PROJECT_RULES.md`
 
 ## Notes
 
 - Node 24 is not supported (`better-sqlite3` native bindings)
 - External market providers can be added later via API keys
+- Spec documents live in `docs/`

@@ -18,8 +18,16 @@ export function createApp(
   const app = express();
 
   app.use(cors({ origin: true }));
-  app.use(express.json());
+  app.use(express.json({ limit: "2mb" }));
   app.use(requestContext(logger));
+
+  app.use((error: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (error instanceof SyntaxError) {
+      res.status(400).json(errorResponse("INVALID_JSON", "Malformed JSON body"));
+      return;
+    }
+    next(error);
+  });
 
   app.use("/api/v1", createApiRouter(services, db));
 

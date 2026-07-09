@@ -11,6 +11,7 @@
     "dev:api": "node scripts/check-node.mjs && pnpm --filter @portfolio-tracker/api dev",
     "dev:web": "node scripts/check-node.mjs && pnpm --filter @portfolio-tracker/web dev",
     "dev:api:docker": "docker compose run --rm api",
+    "dev:web:docker": "docker compose run --rm web",
     "build": "pnpm --filter @portfolio-tracker/web build",
     "test": "vitest run",
     "lint": "eslint . --max-warnings=0",

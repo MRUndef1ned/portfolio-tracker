@@ -12,7 +12,8 @@ services:
     ports:
       - "${WEB_PORT:-5173}:5173"
     volumes:
-      - ./apps/web:/workspace/apps/web
+      - .:/workspace
+      - web_node_modules:/workspace/node_modules
     healthcheck:
       test: ["CMD-SHELL", "echo ok"]
       interval: 30s
@@ -47,3 +48,4 @@ services:
 volumes:
   sqlite_data:
   api_node_modules:
+  web_node_modules:

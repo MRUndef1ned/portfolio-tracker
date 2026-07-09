@@ -1,15 +1,4 @@
-import {
-  Button,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography
-} from "@mui/material";
+import { Alert, Button, Paper, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { apiDelete, apiGet, apiPost } from "../api/client";
@@ -34,18 +23,27 @@ export function AssetsPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: () =>
-      apiPost<Asset>("/assets", {
-        ticker,
-        displayName,
+    mutationFn: () => {
+      if (!ticker.trim() || !displayName.trim()) {
+        throw new Error("Ticker and display name are required");
+      }
+
+      return apiPost<Asset>("/assets", {
+        ticker: ticker.trim().toUpperCase(),
+        displayName: displayName.trim(),
         market: "BIST",
         assetType: "STOCK",
         currency: "TRY",
         provider: "mock",
         isin: null,
         status: "active"
-      }),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["assets"] })
+      });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["assets"] });
+      setTicker("");
+      setDisplayName("");
+    }
   });
 
   const deleteMutation = useMutation({
@@ -54,53 +52,54 @@ export function AssetsPage() {
   });
 
   if (isLoading) return <Typography>Loading assets...</Typography>;
-  if (error) return <Typography color="error">Failed to load assets</Typography>;
+  if (error) return <Alert severity="error">Failed to load assets</Alert>;
 
   return (
     <Stack spacing={2}>
       <Paper sx={{ p: 2 }}>
-        <Stack direction="row" spacing={2}>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
           <TextField label="Ticker" value={ticker} onChange={(e) => setTicker(e.target.value)} />
-          <TextField
-            label="Display Name"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-          />
+          <TextField label="Display Name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
           <Button variant="contained" onClick={() => createMutation.mutate()}>
             Add Asset
           </Button>
         </Stack>
+        {createMutation.error ? <Alert severity="error" sx={{ mt: 2 }}>{createMutation.error.message}</Alert> : null}
       </Paper>
-      <Paper>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Ticker</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Market</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {(data ?? []).map((asset) => (
-              <TableRow key={asset.id}>
-                <TableCell>{asset.id}</TableCell>
-                <TableCell>{asset.ticker}</TableCell>
-                <TableCell>{asset.displayName}</TableCell>
-                <TableCell>{asset.market}</TableCell>
-                <TableCell>{asset.assetType}</TableCell>
-                <TableCell>
-                  <Button color="error" onClick={() => deleteMutation.mutate(asset.id)}>
-                    Delete
-                  </Button>
-                </TableCell>
+      {!data?.length ? (
+        <Alert severity="info">No assets yet. Create your first tracked instrument.</Alert>
+      ) : (
+        <Paper>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Ticker</TableCell>
+                <TableCell>Name</TableCell>
+                <TableCell>Market</TableCell>
+                <TableCell>Type</TableCell>
+                <TableCell />
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Paper>
+            </TableHead>
+            <TableBody>
+              {data.map((asset) => (
+                <TableRow key={asset.id}>
+                  <TableCell>{asset.id}</TableCell>
+                  <TableCell>{asset.ticker}</TableCell>
+                  <TableCell>{asset.displayName}</TableCell>
+                  <TableCell>{asset.market}</TableCell>
+                  <TableCell>{asset.assetType}</TableCell>
+                  <TableCell>
+                    <Button color="error" onClick={() => deleteMutation.mutate(asset.id)}>
+                      Delete
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Paper>
+      )}
     </Stack>
   );
 }

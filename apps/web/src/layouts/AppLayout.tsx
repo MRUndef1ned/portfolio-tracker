@@ -1,14 +1,4 @@
-import {
-  AppBar,
-  Box,
-  Container,
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemText,
-  Toolbar,
-  Typography
-} from "@mui/material";
+import { AppBar, Box, Container, Drawer, List, ListItemButton, ListItemText, Toolbar, Typography } from "@mui/material";
 import { Link, Outlet, useLocation } from "react-router-dom";
 
 const navItems = [
@@ -16,6 +6,10 @@ const navItems = [
   { label: "Portfolio", path: "/portfolio" },
   { label: "Transactions", path: "/transactions" },
   { label: "Assets", path: "/assets" },
+  { label: "Reports", path: "/reports" },
+  { label: "Import", path: "/import" },
+  { label: "Export", path: "/export" },
+  { label: "Backup", path: "/backup" },
   { label: "Settings", path: "/settings" }
 ];
 
