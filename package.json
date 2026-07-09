@@ -1,0 +1,16 @@
+{
+  "name": "portfolio-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Spec-first monorepo for Portfolio Tracker",
+  "packageManager": "pnpm@9",
+  "scripts": {
+    "dev": "echo \"No runnable apps yet. Continue with Execution-002+.\"",
+    "build": "echo \"No build targets yet. Continue with Execution-002+.\"",
+    "test": "echo \"No tests yet. Continue with Execution-002+.\"",
+    "lint": "echo \"No lint targets yet. Continue with Execution-002+.\"",
+    "format": "echo \"No format targets yet. Continue with Execution-002+.\"",
+    "typecheck": "echo \"No TypeScript packages yet. Continue with Execution-002+.\"",
+    "clean": "echo \"Nothing to clean yet.\""
+  }
+}

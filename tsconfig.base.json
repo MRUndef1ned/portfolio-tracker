@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@portfolio-tracker/shared/*": ["packages/shared/src/*"],
+      "@portfolio-tracker/ui/*": ["packages/ui/src/*"],
+      "@portfolio-tracker/config/*": ["packages/config/src/*"]
+    }
+  }
+}
